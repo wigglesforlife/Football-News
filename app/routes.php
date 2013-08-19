@@ -12,3 +12,6 @@
 */
 
 Route::get('/', 'HomeController@index');
+
+Route::get('/stories/{offset}', 'StoriesController@show');
+Route::get('/stories', 'StoriesController@show');
