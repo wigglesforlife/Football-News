@@ -1,6 +1,6 @@
 <?php
 
-class HomeController extends BaseController {
+class StoriesController extends BaseController {
 
 	/*
 	|--------------------------------------------------------------------------
@@ -14,12 +14,19 @@ class HomeController extends BaseController {
 	|	Route::get('/', 'HomeController@showWelcome');
 	|
 	*/
+	private $LIMIT = 20;
 
-	public function index()
+	public function show($offset = null)
 	{
-		$data = array();
-		return View::make('home')
-			->with($data);
+		if ($offset)
+			$stories = Story::take($this->LIMIT)->skip($offset)->get();
+		else
+			$stories = Story::take($this->LIMIT)->get();
+
+		if ($stories->toArray())
+			return Response::json($stories->toArray(), 200);
+		else
+			return Response::json('No stories found', 404);
 	}
 
 }

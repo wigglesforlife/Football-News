@@ -11,7 +11,7 @@
 |
 */
 
-Route::get('/', function()
-{
-	return View::make('hello');
-});
+Route::get('/', 'HomeController@index');
+
+Route::get('/stories/{offset}', 'StoriesController@show');
+Route::get('/stories', 'StoriesController@show');
