@@ -17,9 +17,8 @@ class HomeController extends BaseController {
 
 	public function index()
 	{
-		$data = array();
-		return View::make('home')
-			->with($data);
+		return View::make('master')
+				->nest('body','layouts.home');
 	}
 
 }
