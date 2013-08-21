@@ -73,6 +73,11 @@ abstract class Parser
 		return $this->recentlyCached;
 	}
 
+	public function cleanParserString($string)
+	{
+		return trim(htmlspecialchars_decode($string,ENT_QUOTES));
+	}
+
 	public function __destruct()
 	{
 		$this->dom->clear();

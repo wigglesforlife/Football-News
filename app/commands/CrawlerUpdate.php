@@ -4,10 +4,11 @@ use Illuminate\Console\Command;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Input\InputArgument;
 use Sunra\PhpSimple\HtmlDomParser;
-use Dmorris\Parser\GuardianTeamNews;
-use Dmorris\Parser\ESPNTeamNews;
-use Dmorris\Parser\SkysportsTeamNews;
-use Dmorris\Parser\BBCGossip;
+use Dmorris\Parser\FootballTeams\GuardianTeamNews;
+use Dmorris\Parser\FootballTeams\ESPNTeamNews;
+use Dmorris\Parser\FootballTeams\SkysportsTeamNews;
+use Dmorris\Parser\FootballTeams\BBCTeamNews;
+use Dmorris\Parser\FootballStories\BBCStory;
 
 class CrawlerUpdate extends Command {
 
@@ -54,7 +55,6 @@ class CrawlerUpdate extends Command {
 			$this->error('Invalid argument used. Try ' . implode(array_keys($this->parsers),', ').' or all');
 			return;
 		}
-
 		$teamlinks = $this->getTeamlinks();
 		if(!count($teamlinks))
 			$this->error('No links to update.');
@@ -89,13 +89,13 @@ class CrawlerUpdate extends Command {
 
 	protected function crawl($parser, $url)
 	{
-		$parser = new ReflectionClass('Dmorris\\Parser\\'.$parser);
+		$parser = new ReflectionClass('Dmorris\\Parser\\FootballTeams\\'.$parser);
 		$parser = $parser->newInstance($url);
 		$return = array();
 		try 
 		{
 			if($parser->recentlyCached() OR !Cache::has(md5($url)))
-				$this->comment('No cache. Sleeping for 1/2 second to be kind to servers.') && usleep(500000);
+				$this->comment('No cache. Sleeping for 1 second to be kind to servers.') && usleep(1000000);
 			$return = $parser->parse();
 			unset($parser); // Destroy the object so HtmlDomParser clears it's memory...
 		}
@@ -122,18 +122,30 @@ class CrawlerUpdate extends Command {
 		{
 			try
 			{
+				// If we already have the story then skip this iteration of the loop - move onto the next.
+				if(count(Story::where('hash','=',md5($headline['source']))->where('team','=',$team)->get()) > 0)
+					continue;
+
 				$Story = new Story;
 				$Story->team = $team;
 				$Story->source = $headline['source'];
 				$Story->hash = $headline['id'];
 				$Story->story = $headline['story'];
 				$Story->parser = $parser;
+				$Story->created_at = $Story->freshTimestamp(); // Time this entry is created.
+				$Story->updated_at = new DateTime("@".$headline['timestamp']); // Actual publication date.
+				$Story->short_description = $headline['short_description'];
+
 				$Story->save();
+				
 			}
 			catch(Exception $e)
 			{
 				if(strpos($e->getMessage(), 'SQLSTATE[23000]') === false)
-					$this->error('Problem saving Story entry for url: '.$headline['source']) && $this->error($e->getMessage());
+				{
+					$this->error('Problem saving Story entry for url: '.$headline['source']);
+					$this->error($e->getMessage());
+				}
 			}
 		}
 	}
