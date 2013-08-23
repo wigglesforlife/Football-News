@@ -23,7 +23,7 @@ class BBCTeamNews extends Parser {
 				$pagedata = $storyparser->parse();
 				unset($storyparser);
 				$gossip[] = array(
-					'story' => trim(htmlspecialchars_decode($story->text(),ENT_QUOTES)), 
+					'story' => $this->cleanParserString($story->text()), 
 					'source' => $story->href, 
 					'timestamp' => $pagedata['time'],
 					'short_description' => $pagedata['short_description'], 

@@ -19,7 +19,7 @@ class SkysportsStory extends StoryParser
 		if($short_description && $timestamp && $return = true)
 		{
 			$this->data['short_description'] = $this->cleanParserString($short_description->text());
-			$this->data['time'] = strtotime($timestamp->text());
+			$this->data['time'] = $this->getTime($timestamp->text());
 		}
 		else // Preview/Match report.
 		{
@@ -29,11 +29,70 @@ class SkysportsStory extends StoryParser
 			if($short_description && $timestamp && $return = true)
 			{
 				$this->data['short_description'] = $this->cleanParserString($short_description->text());
-				$this->data['time'] = strtotime(trim(str_replace('Last Updated:', '', $timestamp->text())));
+				$this->data['time'] = $this->getTime($timestamp->text());
 			}
 		}
 
 		return $return;
+	}
+
+	/**
+	* Some Skysports tags with the publication date also contain variations of different words such as
+	* the author's name and other arbitary text. Since it's all in one tag it needs to be extracted.
+	* This is a rudimentary method of finding date/times by trying subsets of the string to check for dates.
+	*/
+	private function parseSkysportsTimeString($string)
+	{
+		// If our string is already a time no need to parse.
+		if(strtotime($string))
+			return strtotime($string);
+
+		$datetimes = array();
+		$firststring = explode(' ', $string);
+
+		// Find our date/times
+		while(count($firststring) > 1)
+		{
+			$teststring = $firststring;
+			while(count($teststring) > 1)
+			{
+				$implode = implode(' ', $teststring);
+				
+				if(strlen(trim($implode)) > 0 && strtotime($implode))
+					$datetimes[] =  $implode;
+				array_shift($teststring);
+			}
+			array_pop($firststring);
+		}
+		unset($firststring);
+
+
+
+		// Assume that the string with the most characters is the most accurate i.e 30th August 2013 is more accurate than 30th.
+		$biggest = '';
+		if(count($datetimes) > 0)
+		{
+			foreach($datetimes as $dt)
+			{
+				if(strlen($dt) > strlen($biggest))
+				{
+					$biggest = $dt;
+				}
+			}
+		}		
+		else
+		{
+			return false;
+		}
+		return $biggest;
+	}
+
+	private function getTime($string)
+	{
+		$time = $this->parseSkysportsTimeString($string);
+		if($time && strtotime($time))
+			return strtotime($time);
+		return time();
 	}
 
 }

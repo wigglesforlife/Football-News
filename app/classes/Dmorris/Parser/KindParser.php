@@ -34,7 +34,4 @@ abstract class KindParser extends Parser
 		is_null($url) AND $url = $this->url;
 		return \Story::where('hash','=',md5($url))->count() > 0;
 	}
-
-	// Stub. We don't want the destructor doing memory clean up here for the domparser
-	public function __destruct() {}
 }

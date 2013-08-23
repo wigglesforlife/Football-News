@@ -52,13 +52,19 @@ abstract class Parser
 	    curl_setopt($curl, CURLOPT_HEADER, 0);
 	    curl_setopt($curl, CURLOPT_RETURNTRANSFER, 1);
 	    curl_setopt($curl, CURLOPT_URL, $this->url);
-	    curl_setopt($curl, CURLOPT_FOLLOWLOCATION, TRUE);       
+	    curl_setopt($curl, CURLOPT_FOLLOWLOCATION, TRUE);
+	    curl_setopt($curl, CURLOPT_FAILONERROR,true);  
 
 	    $data = curl_exec($curl);
+
+	    $httpCode = curl_getinfo($curl, CURLINFO_HTTP_CODE);
+
+	    if(($data === false && curl_errno($curl)) || !($httpCode >= 200 && $httpCode < 300))
+	    	throw new \Exception("HTTP request on ".$this->url." failed. cURL errno: ".curl_errno($curl));
+
 	    curl_close($curl);
 
-	    if($data === false && curl_errno($curl))
-	    	throw new Exception("HTTP request on ".$this->link." failed. cURL errno: ".curl_errno($curl));
+	    
 
 	    Cache::add(md5($this->url), $data, 30);
 	    $this->recentlyCached = true;
@@ -78,9 +84,17 @@ abstract class Parser
 		return trim(htmlspecialchars_decode($string,ENT_QUOTES));
 	}
 
+	public function freeMemory()
+	{
+		if(isset($this->dom) && $this->dom)
+			$this->dom->clear();
+		$this->dom = null;
+		unset($this->dom);
+	}
+
 	public function __destruct()
 	{
-		$this->dom->clear();
+		$this->freeMemory();
 	}
 
 }

@@ -41,6 +41,9 @@ class CrawlerUpdate extends Command {
 	 */
 	public function __construct()
 	{
+		error_reporting(E_ALL);
+		ini_set('display_errors', 1);
+
 		parent::__construct();
 	}
 
@@ -59,8 +62,12 @@ class CrawlerUpdate extends Command {
 		$teamlinks = $this->getTeamlinks();
 		if(!count($teamlinks))
 			$this->error('No links to update.');
+
 		foreach($teamlinks as $teamlink)
+		{
+			$this->info('Parsing team: '.$teamlink->team);
 			$this->update($teamlink->team, $this->parsers[$this->argument('parser')], $this->crawl($this->parsers[$this->argument('parser')], $teamlink->link));
+		}
 		$this->listStories($this->parsers[$this->argument('parser')]);
 	}
 
@@ -98,7 +105,11 @@ class CrawlerUpdate extends Command {
 			if($parser->recentlyCached() OR !Cache::has(md5($url)))
 				$this->comment('No cache. Sleeping for 1 second to be kind to servers.') && usleep(1000000);
 			$return = $parser->parse();
-			unset($parser); // Destroy the object so HtmlDomParser clears it's memory...
+
+			// Clear memory of the parser...
+			$parser->freeMemory();
+			$parser = null;
+			unset($parser);
 		}
 		catch(Exception $e)
 		{
@@ -126,7 +137,7 @@ class CrawlerUpdate extends Command {
 				// If we already have the story then skip this iteration of the loop - move onto the next.
 				if(count(Story::where('hash','=',md5($headline['source']))->where('team','=',$team)->get()) > 0)
 					continue;
-
+				$this->comment('Saving: '.$headline['source']);
 				$Story = new Story;
 				$Story->team = $team;
 				$Story->source = $headline['source'];
