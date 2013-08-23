@@ -9,6 +9,7 @@ use Dmorris\Parser\FootballTeams\ESPNTeamNews;
 use Dmorris\Parser\FootballTeams\SkysportsTeamNews;
 use Dmorris\Parser\FootballTeams\BBCTeamNews;
 use Dmorris\Parser\FootballStories\BBCStory;
+use Dmorris\Parser\FootballStories\SkysportsStory;
 
 class CrawlerUpdate extends Command {
 
