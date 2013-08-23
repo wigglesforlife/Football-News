@@ -13,3 +13,4 @@
 
 Artisan::add(new ParseBBCGossipCommand);
 Artisan::add(new CrawlerUpdate);
+DB::disableQueryLog();
